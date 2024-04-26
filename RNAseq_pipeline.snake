@@ -1,0 +1,166 @@
+######################################################################
+#################### My Project 3 RNAseq Pipeline ####################
+######################################################################
+
+# Read in the data
+#filepath = '/projectnb/bf528/materials/project_3_individual/rnaseq'
+filepath = '/projectnb/bf528/students/nmf35/bf528-individual-project-NathanielFisher1/test_samples'
+# Name reps
+#reps = ['rep1','rep2','rep3']
+reps = ['rep1','rep2']
+
+# Name samples
+#names = ['CTL', 'KO']
+names = ['sub_CTL', 'sub_KO']
+
+# Name reads
+reads = ['R1','R2']
+
+# other inputs
+#                 'results/multiqc_report.html'
+
+
+# First perform QC on reads using fastqc and assemble everything into one report with multiqc
+rule all:
+		input:
+				'results/GRCh38.primary_assembly.genome.fa',
+				'results/gencode.v45.primary_assembly.annotation.gtf',
+				expand('results/{name}{rep}_{read}_fastqc.html', name = names, rep = reps, read = reads),
+				expand('results/{name}{rep}.Aligned.out.bam', name = names, rep = reps)
+
+# Run fastqc for each sample to check read quality
+rule fastqc:
+		input:
+				fastq = expand('test_samples/{name}{rep}_{read}.fastq.gz', name = names, rep = reps, read = reads)
+		output:
+				'results/{name}{rep}_{read}_fastqc.html'
+		params:
+				outdir = 'results/'
+		threads: 4 
+		conda:
+				'envs/fastqc_env.yml'
+		shell:
+				'''
+				fastqc {input.fastq} --outdir {params.outdir}
+				'''
+
+# Perform read alignment for each sample
+
+# First need to get human genome
+
+rule wget_hg38_fa:
+		output:
+				'results/GRCh38.primary_assembly.genome.fa.gz'
+		params:
+				ftp_path = 'https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_45/GRCh38.primary_assembly.genome.fa.gz'
+		shell:
+				'''
+				wget {params.ftp_path} -P ./results/
+				'''
+
+# Then need to get human gtf
+
+rule wget_hg38_gtf:
+		output:
+				'results/gencode.v45.primary_assembly.annotation.gtf.gz'
+		params:
+		shell:
+				'''
+				wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_45/gencode.v45.primary_assembly.annotation.gtf.gz -P ./results/
+				'''
+
+rule unzip_gtf:
+		input:
+				gz = 'results/gencode.v45.primary_assembly.annotation.gtf.gz'
+		output:
+				gtf = 'results/gencode.v45.primary_assembly.annotation.gtf'
+		shell:
+				'''
+				gunzip -c {input.gz} > {output.gtf}
+       			'''
+
+rule unzip_fa:
+		input:
+				gz = 'results/GRCh38.primary_assembly.genome.fa.gz'
+		output:
+				fa = 'results/GRCh38.primary_assembly.genome.fa'
+		shell:
+				'''
+				gunzip -c {input.gz} > {output.fa}
+				'''
+
+# Now align our reads using STAR (using --outSAMunmapped Within so that I can look at alignment quality with samtools flagstats )
+
+rule star_index:
+		input:
+				fa = 'results/GRCh38.primary_assembly.genome.fa',
+				star_dir = 'samples/star_dir',
+				gtf = 'results/gencode.v45.primary_assembly.annotation.gtf'
+		output:
+				'samples/star_dir/chrLength.txt',
+				'samples/star_dir/chrNameLength.txt',
+				'samples/star_dir/chrName.txt',
+				'samples/star_dir/chrStart.txt',
+				'samples/star_dir/exonGeTrInfo.tab',
+				'samples/star_dir/exonInfo.tab',
+				'samples/star_dir/geneInfo.tab',
+				'samples/star_dir/Genome',
+				'samples/star_dir/genomeParameters.txt',
+				'samples/star_dir/SA',
+				'samples/star_dir/SAindex',
+				'samples/star_dir/sjdbInfo.txt',
+				'samples/star_dir/sjdbList.fromGTF.out.tab',
+				'samples/star_dir/sjdbList.out.tab',
+				'samples/star_dir/transcriptInfo.tab'
+		params:
+		conda:
+				'envs/star_env.yml'
+		threads: 4
+		shell:
+				'''
+				STAR --runThreadN {threads} --runMode genomeGenerate --genomeDir {input.star_dir} --genomeFastaFiles {input.fa} \
+				--sjdbGTFfile {input.gtf}
+				'''
+
+
+
+rule star:
+		input:
+				'samples/star_dir/transcriptInfo.tab',
+				r1 = 'test_samples/{name}{rep}_R1.fastq.gz',
+				r2 = 'test_samples/{name}{rep}_R2.fastq.gz',
+				star_dir = 'samples/star_dir/'
+		output:	
+				bam = 'results/{name}{rep}.Aligned.out.bam'
+		params:
+				prefix = 'results/{name}{rep}.'
+		conda:
+				'envs/star_env.yml'
+		shell:
+				'''
+				STAR --genomeDir {input.star_dir} --readFilesIn {input.r1} {input.r2} --readFilesCommand zcat --outSAMtype BAM Unsorted --outFileNamePrefix {params.prefix} --outSAMunmapped Within
+				'''
+
+# Perform alignment QC with samtools flagstats
+
+rule samtools_flagstat:
+		input:
+				bam = 'results/{name}.Aligned.out.bam'
+		output:
+				flagstats = 'results/{name}_flagstats.txt'
+		shell:
+				'samtools flagstats {input.bam} > {output.flagstats}'
+
+# remember that you want multiqc to run only after fastqc has run on all the files
+rule multiqc:
+        input:
+                expand('results/{name}{rep}_{read}_fastqc.html', path = filepath, name = names, rep = reps, read = reads)
+        output:
+                'results/multiqc_report.html'
+        conda:
+		        'envs/multiqc_env.yml'
+        params:
+        shell:
+                '''
+                multiqc . -o results/
+                '''

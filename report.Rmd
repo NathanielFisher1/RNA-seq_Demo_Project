@@ -1,0 +1,47 @@
+Requirements:
+Briefly remark on the quality of the sequencing reads and the alignment statistics, make sure to specifically mention the following:
+Are there any concerning aspects of the quality control of your sequencing reads?
+Are there any concerning aspects of the quality control related to alignment?
+Based on all of your quality control, will you exclude any samples from further analysis?
+After generating your counts matrix, perform either a PCA or produce a sample-to-sample distance plot as described in the DESeq2 vignette.
+Briefly remark on the plot and what it indicates to you in terms of the experiment
+After performing DE analysis, choose an appropriate FDR threshold to subset your DE results.
+How many genes are significant at your chosen statistical threshold?
+After performing FGSEA (GSEA) using a ranked list of all genes in the experiment and performing gene set enrichment using your list of statistically significant DE genes, please answer the following questions:
+How similar are the results from these two analyses? Are there any notable differences?
+Do you expect there to be any differences? If so, why?
+What do the results imply about potentional biological functions of the factor of interest?
+Deliverables
+
+Produce either a sample-to-sample distance plot from the counts matrix or a PCA biplot
+
+A CSV containing all of the results from your DE analysis
+
+A histogram showing the distribution of log2FoldChanges of your DE genes
+
+A volcano plot that distinguishes between significant and non-significant DE genes as well as labels up- and downregulated genes
+
+Label the top ten most significant genes with their associated gene name / gene symbol.
+Perform a GSEA (FGSEA) analysis on all the genes discovered in the experiment
+
+You may choose a ranking metric you feel is appropriate
+You may use the C2 canonical pathways database or another of your choice
+Create a single table / figure that reports the most interesting results
+Use your list of DE genes at your chosen statistical threshold and perform a basic enrichment analysis using a tool of your choice
+
+You may use DAVID, enrichR, or other well-validated gene enrichment tools
+Create a single table / figure that reports the most interesting results
+
+
+### Subsetting Samples 
+
+I needed to start by subsetting samples to test my script to make testin more efficient.
+I opted to used seqtk to subsample 10000 reads from each of the .fq.gz files:
+
+```bash
+seqtk sample -s100 [sample_name]_R1.fastq.gz 10000 > sub_[sample_name]_R1.fastq  
+seqtk sample -s100 [sample_name]_R2.fastq.gz 10000 > sub_[sample_name]_R2.fastq 
+```
+
+#### Quality of Reads and Alignment
+
