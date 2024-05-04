@@ -5,19 +5,19 @@ Are there any concerning aspects of the quality control related to alignment?
 Based on all of your quality control, will you exclude any samples from further analysis?
 After generating your counts matrix, perform either a PCA or produce a sample-to-sample distance plot as described in the DESeq2 vignette.
 Briefly remark on the plot and what it indicates to you in terms of the experiment
-After performing DE analysis, choose an appropriate FDR threshold to subset your DE results.
-How many genes are significant at your chosen statistical threshold?
+After performing DE analysis, choose an appropriate FDR threshold to subset your DE results. (need to check about this)
+How many genes are significant at your chosen statistical threshold? 
 After performing FGSEA (GSEA) using a ranked list of all genes in the experiment and performing gene set enrichment using your list of statistically significant DE genes, please answer the following questions:
 How similar are the results from these two analyses? Are there any notable differences?
 Do you expect there to be any differences? If so, why?
 What do the results imply about potentional biological functions of the factor of interest?
 Deliverables
 
-Produce either a sample-to-sample distance plot from the counts matrix or a PCA biplot
+Produce either a sample-to-sample distance plot from the counts matrix or a PCA biplot (done)
 
-A CSV containing all of the results from your DE analysis
+A CSV containing all of the results from your DE analysis (done)
 
-A histogram showing the distribution of log2FoldChanges of your DE genes
+A histogram showing the distribution of log2FoldChanges of your DE genes (done)
 
 A volcano plot that distinguishes between significant and non-significant DE genes as well as labels up- and downregulated genes
 
@@ -44,4 +44,43 @@ seqtk sample -s100 [sample_name]_R2.fastq.gz 10000 > sub_[sample_name]_R2.fastq
 ```
 
 #### Quality of Reads and Alignment
+
+Quality of Sequencing Reads (fastqc) 
+
+![Alt text](/projectnb/bf528/students/nmf35/bf528-individual-project-NathanielFisher1/results/images/read_qc.png)
+The read quality looks normal in terms of GC content and total reads (80-120 M).  While the duplication levels would appear to be concerning, this is normal for RNAseq data since there tend to be some sequences that are highly expressed relative to most leading to high duplicates in fastQC.  Read quality (per sequence and mean) also are all high ~35 so I would say that the read quality is good. 
+
+
+
+Quality of Alignment (flagstats)
+
+![Alt text](/projectnb/bf528/students/nmf35/bf528-individual-project-NathanielFisher1/results/images/alignment_qc.png)
+
+The alignment does not show glaring issues.  For all samples >90% of reads are uniquely mapped and there are very few unmapped reads.
+
+Based on quality, I will not exclude any samples from the analysis.
+
+#### PCA and Clustering
+
+![Alt text](/projectnb/bf528/students/nmf35/bf528-individual-project-NathanielFisher1/results/images/pca.png)
+Clearly there is one KO sample that is different from the other two in terms of overall expression profile.  This also is clear in the sample distance plot.
+
+![Alt text](/projectnb/bf528/students/nmf35/bf528-individual-project-NathanielFisher1/results/images/sample_distance.png)
+### Setting FDR and Determining Signifiance Genes
+
+DESeq by default calculated the Benjamini-Hochberg adjusted p-values for results so I will use this method.  The default alpha (false discovery rate) is 0.1.  The method ranks all p-values and then calculated the adjusted p-value as  (p-value)/(rank)*(number of tests).  I tested a few different rates and saw slight variation in number of significantly DE genes, but will choose to use the default with the knowledge that this assumes 10% of the significnatly DE may be false positives.
+
+With an FDR threshold of 0.1 there are 686 significantly upregulated genes and 822 significantly downregulated genes.
+
+
+### Histogram of DE Genes
+
+### Volcano Plot of DE Genes
+
+
+After performing FGSEA (GSEA) using a ranked list of all genes in the experiment and performing gene set enrichment using your list of statistically significant DE genes, please answer the following questions:
+How similar are the results from these two analyses? Are there any notable differences?
+Do you expect there to be any differences? If so, why?
+What do the results imply about potentional biological functions of the factor of interest?
+Deliverables
 
