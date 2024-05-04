@@ -1,28 +1,28 @@
 # ATACseq Project Proposal
 ## Methods
 
-Two replicates for atacseq will be downloaded from public accession database.  Read QC will be performed with Fastqc (v0.11.7) and adapter trimming will be performed with trimmomatic (0.39).  BowTie2 (v2.5.1) (args: -X 2000) will be used for alignment.  Mitochondrial reads will be removed using samtools (v1.12) view and alignment QC will be performed with samtools flagstats.  Tagmentation bias of transposase preferentially cleaving certain motifs will be normalized using deeptools (v3.5.1) (args: alignmentSieve --ATACshift).  Then ATACSeqQC (v4.3 via Bioconductor v3.18) will be used to filter out nuceosome bound reads and duplicate reads.
+Three replicates for RNAseq of a WT and KO cell line will be downloaded from public accession database.  Read QC will be performed with Fastqc (v0.11.7). STAR (v2.7.11b) will be used to align reads and Samtools (v1.19.2) flagstats will assess alignment quality.  
 
-Peak calling will be performed using MACS3 (v3.0.1) and reproducible peaks will be defined as those existing in both replicates based on analysis using bedtools intersect (v2.31.0).  Analysis of peaks will include searching for motif enrichment, peak annotation, dsitribution of peaks in genomic regions, and potentially integration of peak data with RNAseq data.
+Reads will be counted using Verse (v0.1.5) and filtered for genes that have counts > 0 for at least two of three replicates.  DESeq2 (v3.19) will be used for differential expression analysis in R and fgsea (v3.19) will be used for Gene Set enrichement analysis while ernichR (v3.2) will be used for gene enrichment analysis.
 
 ## Questions
 
-1. Are there any concerning aspects of the quality control of the sequencing reads?
+1. Are there any concerning aspects of the quality control of your sequencing reads?
 2. Are there any concerning aspects of the quality control related to alignment?
-3. Based on quality control, will any samples be excluded from further analysis?
-4. How many peaks are present in each of the replicates?
-5. How many peaks are present in the set of reproducible peaks? What strategy was used to determine “reproducible” peaks?
-6. What can chromatin accessibility let us infer biologically?
+3. Based on quality control, will any samples be exluded from further analysis?
+4. How many genes are significant at your chosen statistical threshold?
+5. How similar are the results from GSEA and gene set enrichment? Are there any notable differences?
+6. Are differences expected? If so, why?
+7. What do the results imply about potentional biological functions of the factor of interest?
 
 ## Deliverables
 
-1. Produce a fragment length distribution plot for each of the samples
-2. Produce a table of how many alignments for each sample before and after filtering alignments falling on the mitochondrial chromosome
-3. Create a signal coverage plot centered on the TSS (plotProfile) for the nucleosome-free regions (NFR) and the nucleosome-bound regions (NBR)
-4. A table containing the number of peaks called in each replicate, and the number of reproducible peaks
-5. A single BED file containing the reproducible peaks you determined from the experiment.
-6. Perform motif finding on reproducible peaks
-7. Create a single table / figure with the most interesting results
-8. Perform a gene enrichment analysis on the annotated peaks using a well-validated gene enrichment tool
-9. Create a single table / figure with the most interesting results
-10. Produce a figure that displays the proportions of regions that appear to have accessible chromatin called as a peak (Promoter, Intergenic, Intron, Exon, TTS, etc.)
+1. Produce either a sample-to-sample distance plot from the counts matrix or a PCA biplot
+2. A CSV containing all of the results from your DE analysis
+3. A histogram showing the distribution of log2FoldChanges of your DE genes
+4. A volcano plot that distinguishes between significant and non-significant DE genes as well as labels up- and downregulated genes
+5. Label the top ten most significant genes with their associated gene name / gene symbol.
+6. Perform a GSEA (FGSEA) analysis on all the genes discovered in the experiment
+7. Create a single table / figure that reports the most interesting results
+8. Use your list of DE genes at your chosen statistical threshold and perform a basic enrichment analysis using a tool of your choice
+9. Create a single table / figure that reports the most interesting results
