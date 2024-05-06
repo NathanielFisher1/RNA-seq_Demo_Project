@@ -90,7 +90,7 @@ final_results_Sig <- subset(final_results_ordered, padj < 0.1)
 
 # write all results to csv
 write.csv(final_results_ordered, 
-          file="condition_treated_results.csv")
+          file="/projectnb/bf528/students/nmf35/bf528-individual-project-NathanielFisher1/results/final_DE_results.csv")
 
 
 # make histogram of sig results
