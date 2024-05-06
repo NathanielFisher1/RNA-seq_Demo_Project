@@ -9,7 +9,7 @@ library("RColorBrewer")
 library("pheatmap")
 library("ggplot2")
 library(enrichR)
-
+library(ggrepel)
 ### DESeq2 Analysis ###
 
 ### DID NOT PERFORM PREFILTERING (aside from removing rows where one sample had count = 0) ###
@@ -50,7 +50,6 @@ dim(final_results)
 summary(res)
 plotMA(res, ylim=c(-5,5))
 
-rowData(dds)$gene
 # first normalize data to remove dependent mean-variance relationship 
 # transform data with variance stabilizing tranformation
 vsd <- vst(dds, blind=FALSE)
@@ -77,21 +76,12 @@ plotPCA(vsd, intgroup=c("Condition"))
 # one of the KOs is clearly different
 
 # setting FDR (decided to use standard 0.01)
-#res05 <- results(dds, alpha=0.05)
-
-summary(res)
-summary(res05)
-metadata(res)$alpha
-metadata(res)$filterThreshold
 
 plot(metadata(res)$filterNumRej, 
      type="b", ylab="number of rejections",
      xlab="quantiles of filter")
 lines(metadata(res)$lo.fit, col="red")
 abline(v=metadata(res)$filterTheta)
-
-
-
 
 
 # get only significant results
@@ -117,12 +107,24 @@ volc_df <- volc_tibble %>% mutate(DE = case_when(
   TRUE ~ "NS"
 ), log10p = -log10(padj))
 
-head(volc_df)
-ggplot(volc_df, aes(x = log2FoldChange, y = log10p, color = DE)) + geom_point() + scale_y_continuous(limits = c(0,115))+
-  labs(title = "Volcano Plot Showing Significantly Up and Down regulated Genes", y = "-log10(p-value)")
+color_scheme <- c("DOWN" = "red", "NS" = "lightgrey", "UP" = "green")
 
 
-summary(is.na(volc_df$padj))
+ggplot(volc_df, aes(x = log2FoldChange, y = log10p, color = DE)) + geom_point(size = .7) + scale_y_continuous(limits = c(-10,112))+
+  scale_x_continuous(limits = c(-9,5))+
+  labs(title = "Volcano Plot Showing Significantly Up and Down regulated Genes", y = "-log10(p-value)") +
+geom_label_repel(data = subset(volc_df, log2FoldChange < -3.135 | log2FoldChange > 3.135),aes(label = gene),
+                     show.legend = FALSE, 
+                 size = 3,
+                 box.padding = 1,
+                     segment.color = "grey50",
+                 max.overlaps = Inf,
+                 colour = 'black'
+                     )+
+  scale_color_manual(values = color_scheme)
+
+
+
 
 ### GSEA ###
 # Starting with sign gene set
@@ -143,19 +145,19 @@ fgsea_results %>%
   geom_bar(aes(x=pathway, y=NES, fill = padj < .25), stat='identity') +
   scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'blue')) + 
   theme_minimal() +
-  ggtitle('fgsea results for Hallmark MSigDB gene sets') +
+  ggtitle('fgsea results for Hallmark MSigDB gene sets 
+          for signidicantly DE Genes') +
   ylab('Normalized Enrichment Score (NES)') +
   xlab('') +
   coord_flip()
 
-# now doing it for all
+# now doing it for all genes
 ordered_results <- final_results_ordered[order(-final_results_ordered$log2FoldChange),]
 head(ordered_results)
 rnk_list <- setNames(ordered_results$log2FoldChange, ordered_results$gene)
 head(rnk_list)
 tail(rnk_list)
 length(rnk_list)
-#hallmark_pathways_fgsea <- fgsea::gmtPathways('/projectnb/bf528/students/nmf35/bf528-individual-project-NathanielFisher1/h.all.v7.5.1.symbols.gmt')
 fgsea_results <- fgsea(hallmark_pathways_fgsea, rnk_list, minSize = 15, maxSize=500)
 
 
@@ -165,7 +167,8 @@ fgsea_results %>%
   geom_bar(aes(x=pathway, y=NES, fill = padj < .25), stat='identity') +
   scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'blue')) + 
   theme_minimal() +
-  ggtitle('fgsea results for Hallmark MSigDB gene sets') +
+  ggtitle('fgsea results for Hallmark MSigDB gene sets 
+  for all DE Genes') +
   ylab('Normalized Enrichment Score (NES)') +
   xlab('') +
   coord_flip()
@@ -173,32 +176,22 @@ fgsea_results %>%
 
 # Gene functional enrichment
 
-dbs <- listEnrichrDbs()
-#used these dbs as a comprehensive RNAseq resource
+#used these dbs as a comprehensive RNAseq resource to start with some exploration, but then just used MSidDB HallMark
 dbs <- c("RNA-Seq_Disease_Gene_and_Drug_Signatures_from_GEO",	 
 "RNAseq_Automatic_GEO_Signatures_Human_Down", 
 "RNAseq_Automatic_GEO_Signatures_Human_Up")
-enriched <- enrichr(final_results_Sig$gene, dbs)
-bp <- enriched[["RNAseq_Automatic_GEO_Signatures_Human_Up"]]
 
-plotEnrich(enriched[[2]], showTerms = 40, numChar = 60, y = "Count", orderBy = "P.value")
+enriched <- enrichr(final_results_Sig$gene, "MSigDB_Hallmark_2020")
+bp <- enriched[["MSigDB_Hallmark_2020"]]
+#make plot
+plotEnrich(enriched[[1]], showTerms = 40, numChar = 60, y = "Count", orderBy = "P.value", title = "Enrichment Analysis by EnrichR ")
 
+# try separating them out for down and upregulated genes
+UP <- final_results_Sig[final_results_Sig['log2FoldChange'] > 0,]
+DOWN <- final_results_Sig[final_results_Sig['log2FoldChange'] < 0,]
 
+enriched <- enrichr(UP$gene, "MSigDB_Hallmark_2020")
+plotEnrich(enriched[[1]], showTerms = 40, numChar = 60, y = "Count", orderBy = "P.value", title = "Enrichment Analysis by EnrichR (Upregulated)")
 
-
-head(fgsea_results)
-rand <- data.frame(assay(dds))
-assay <-tibble::rownames_to_column(rand,var = "id")
-head(assay)
-add_gene_names <- tibble(names) 
-
-#i am having some issues finding the genes....
-final <- inner_join(assay, add_gene_names, by = "id")
-mito <- c("Mpc1","Prdx3","Acat1","Echs1","Slc25a11","Phyh")
-sarc <- c("Pdlim5","Pygm","Myoz2","Dex","Csrp3","Tcap","Cryab")
-cc <- c("Cdc7","E2f8","Cdk7","Cdc26","Cdc6","E2f1","Cdc27","Rad51","Aurkb","Cdc23") 
-dat <- final %>% filter(gene %in% sarc)
-?fgsea    
-
-
-### Analyzing Data ###
+enriched <- enrichr(DOWN$gene, "MSigDB_Hallmark_2020")
+plotEnrich(enriched[[1]], showTerms = 40, numChar = 60, y = "Count", orderBy = "P.value", title = "Enrichment Analysis by EnrichR (Downregulated)")
