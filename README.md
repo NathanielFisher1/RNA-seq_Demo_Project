@@ -1,4 +1,4 @@
-# ATACseq Project Proposal
+# RNAseq Project Proposal
 ## Methods
 
 Three replicates for RNAseq of a WT and KO cell line will be downloaded from public accession database.  Read QC will be performed with Fastqc (v0.11.7). STAR (v2.7.11b) will be used to align reads and Samtools (v1.19.2) flagstats will assess alignment quality.  
