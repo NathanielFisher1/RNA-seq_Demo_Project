@@ -1,23 +1,19 @@
 ######################################################################
-#################### My Project 3 RNAseq Pipeline ####################
+#################### Demo RNAseq Pipeline ####################
 ######################################################################
 
 # Read in the data
 filepath = '/projectnb/bf528/materials/project_3_individual/rnaseq'
-#filepath = '/projectnb/bf528/students/nmf35/bf528-individual-project-NathanielFisher1/test_samples'
+
 # Name reps
 reps = ['rep1','rep2','rep3']
-#reps = ['rep1','rep2']
 
 # Name samples
 names = ['CTL', 'KO']
-#names = ['sub_CTL', 'sub_KO']
 
 # Name reads
 reads = ['R1','R2']
 
-# other inputs
-#                 'results/multiqc_report.html'
 
 
 # First perform QC on reads using fastqc and assemble everything into one report with multiqc
@@ -88,7 +84,7 @@ rule unzip_fa:
 				gunzip -c {input.gz} > {output.fa}
 				'''
 
-# Now align our reads using STAR (using --outSAMunmapped Within so that I can look at alignment quality with samtools flagstats )
+# Now align reads using STAR (using --outSAMunmapped Within so that I can look at alignment quality with samtools flagstats )
 
 rule star_index:
 		input:
@@ -152,7 +148,6 @@ rule samtools_flagstat:
 		shell:
 				'samtools flagstats {input.bam} > {output.flagstats}'
 
-# remember that you want multiqc to run only after fastqc has run on all the files
 rule multiqc:
 		input:
 				expand('results/{name}{rep}_{read}_fastqc.html', path = filepath, name = names, rep = reps, read = reads),

@@ -180,9 +180,9 @@ fgsea_results %>%
 dbs <- c("RNA-Seq_Disease_Gene_and_Drug_Signatures_from_GEO",	 
 "RNAseq_Automatic_GEO_Signatures_Human_Down", 
 "RNAseq_Automatic_GEO_Signatures_Human_Up")
-
 enriched <- enrichr(final_results_Sig$gene, "MSigDB_Hallmark_2020")
 bp <- enriched[["MSigDB_Hallmark_2020"]]
+
 #make plot
 plotEnrich(enriched[[1]], showTerms = 40, numChar = 60, y = "Count", orderBy = "P.value", title = "Enrichment Analysis by EnrichR ")
 
