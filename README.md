@@ -1,5 +1,5 @@
 # RNAseq Demo Project
-### Methods
+## Methods
 
 Three replicates for RNAseq of a WT and KO cell line will be downloaded from public accession database.  Read QC will be performed with Fastqc (v0.11.7). STAR (v2.7.11b) will be used to align reads and Samtools (v1.19.2) flagstats will assess alignment quality.  
 
@@ -14,6 +14,8 @@ I opted to used seqtk to subsample 10000 reads from each of the .fq.gz files:
 seqtk sample -s100 [sample_name]_R1.fastq.gz 10000 > sub_[sample_name]_R1.fastq  
 seqtk sample -s100 [sample_name]_R2.fastq.gz 10000 > sub_[sample_name]_R2.fastq 
 ```
+
+## Results
 
 ### Quality of Reads and Alignment
 
